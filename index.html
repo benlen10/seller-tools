@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Etsy Seller Tools - Automated Listing Backup & Versioning</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            overflow: hidden;
+        }
+
+        header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 60px 40px;
+            text-align: center;
+        }
+
+        h1 {
+            font-size: 2.5em;
+            margin-bottom: 15px;
+            font-weight: 700;
+        }
+
+        .subtitle {
+            font-size: 1.2em;
+            opacity: 0.95;
+            font-weight: 300;
+        }
+
+        main {
+            padding: 50px 40px;
+        }
+
+        .section {
+            margin-bottom: 40px;
+        }
+
+        h2 {
+            color: #667eea;
+            font-size: 1.8em;
+            margin-bottom: 20px;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 10px;
+        }
+
+        p {
+            margin-bottom: 15px;
+            font-size: 1.1em;
+            color: #555;
+        }
+
+        .features {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 25px;
+            margin-top: 30px;
+        }
+
+        .feature {
+            background: #f8f9fa;
+            padding: 25px;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .feature h3 {
+            color: #764ba2;
+            margin-bottom: 10px;
+            font-size: 1.3em;
+        }
+
+        .feature p {
+            font-size: 1em;
+            margin-bottom: 0;
+        }
+
+        .status {
+            background: #fff3cd;
+            border-left: 4px solid #ffc107;
+            padding: 20px;
+            border-radius: 8px;
+            margin-top: 20px;
+        }
+
+        .status strong {
+            color: #856404;
+        }
+
+        footer {
+            background: #f8f9fa;
+            padding: 30px 40px;
+            text-align: center;
+            color: #666;
+            border-top: 1px solid #e9ecef;
+        }
+
+        .github-link {
+            color: #667eea;
+            text-decoration: none;
+            font-weight: 600;
+        }
+
+        .github-link:hover {
+            text-decoration: underline;
+        }
+
+        @media (max-width: 768px) {
+            h1 {
+                font-size: 2em;
+            }
+
+            header, main, footer {
+                padding: 30px 20px;
+            }
+
+            .features {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Etsy Seller Tools</h1>
+            <p class="subtitle">Automated Listing Backup with Versioning & Full Metadata Support</p>
+        </header>
+
+        <main>
+            <section class="section">
+                <h2>About</h2>
+                <p>
+                    Etsy Seller Tools is a web application designed to help Etsy sellers protect their valuable shop data
+                    by providing automated backup solutions for their product listings.
+                </p>
+                <p>
+                    Running an Etsy shop involves significant time and effort in creating detailed product listings
+                    with descriptions, photos, tags, and pricing information. This tool ensures that all of your
+                    hard work is safely backed up with complete version history, giving you peace of mind and the
+                    ability to track changes over time.
+                </p>
+            </section>
+
+            <section class="section">
+                <h2>Key Features</h2>
+                <div class="features">
+                    <div class="feature">
+                        <h3>Automatic Backups</h3>
+                        <p>Scheduled automatic backups of all your Etsy listings, ensuring your data is always protected without manual intervention.</p>
+                    </div>
+                    <div class="feature">
+                        <h3>Version History</h3>
+                        <p>Track changes to your listings over time with comprehensive version control, allowing you to see what changed and when.</p>
+                    </div>
+                    <div class="feature">
+                        <h3>Full Metadata Support</h3>
+                        <p>Complete backup of all listing data including titles, descriptions, photos, tags, pricing, inventory, and more.</p>
+                    </div>
+                    <div class="feature">
+                        <h3>Easy Restoration</h3>
+                        <p>Quickly restore previous versions of your listings if needed, recovering from accidental changes or deletions.</p>
+                    </div>
+                </div>
+            </section>
+
+            <section class="section">
+                <h2>Purpose</h2>
+                <p>
+                    This application integrates with the Etsy API to provide sellers with a reliable backup solution.
+                    By maintaining historical records of your listings, you can:
+                </p>
+                <ul style="margin-left: 40px; color: #555; font-size: 1.1em;">
+                    <li>Protect against accidental deletions or unwanted changes</li>
+                    <li>Analyze how your listings have evolved over time</li>
+                    <li>Maintain records for business and tax purposes</li>
+                    <li>Restore previous versions of listings with confidence</li>
+                </ul>
+
+                <div class="status">
+                    <strong>Development Status:</strong> This application is currently in development.
+                    This page serves as the official project website for API access registration.
+                </div>
+            </section>
+        </main>
+
+        <footer>
+            <p>
+                <a href="https://github.com/blenington/etsy-seller-tools" class="github-link">View on GitHub</a>
+            </p>
+            <p style="margin-top: 10px; font-size: 0.9em;">
+                Built with the Etsy API | For Etsy Sellers, By Developers
+            </p>
+        </footer>
+    </div>
+</body>
+</html>
