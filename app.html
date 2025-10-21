@@ -338,6 +338,54 @@
             color: var(--etsy-black);
         }
 
+        .preview-photos {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+            gap: 12px;
+            margin-top: 8px;
+        }
+
+        .preview-photo {
+            width: 100%;
+            height: 100px;
+            object-fit: cover;
+            border-radius: 4px;
+            border: 1px solid var(--etsy-light-gray);
+        }
+
+        .preview-photo-count {
+            font-size: 14px;
+            color: var(--etsy-gray);
+            margin-top: 8px;
+        }
+
+        .variations-table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 8px;
+            font-size: 14px;
+        }
+
+        .variations-table th {
+            background-color: var(--etsy-bg);
+            padding: 8px 12px;
+            text-align: left;
+            font-weight: 600;
+            border-bottom: 1px solid var(--etsy-light-gray);
+            color: var(--etsy-black);
+            font-size: 12px;
+            text-transform: uppercase;
+        }
+
+        .variations-table td {
+            padding: 8px 12px;
+            border-bottom: 1px solid var(--etsy-light-gray);
+        }
+
+        .variations-table tr:last-child td {
+            border-bottom: none;
+        }
+
         .modal-large {
             max-width: 600px;
         }
@@ -481,27 +529,54 @@
                 id: 1,
                 title: "Handmade Ceramic Coffee Mug",
                 price: 28.00,
-                quantity: 15,
                 description: "Beautiful handcrafted ceramic mug with a stunning blue glaze finish. Perfect for your morning coffee or tea. Each piece is unique and made with care.",
                 tags: ["ceramic", "handmade", "coffee mug", "pottery", "blue"],
+                photos: [
+                    "https://via.placeholder.com/600x400/4A90E2/FFFFFF?text=Blue+Ceramic+Mug",
+                    "https://via.placeholder.com/600x400/5BA3F5/FFFFFF?text=Mug+Side+View",
+                    "https://via.placeholder.com/600x400/6CB4FF/FFFFFF?text=Mug+Detail"
+                ],
+                variations: [
+                    { size: "Small (8 oz)", price: 24.00, quantity: 5 },
+                    { size: "Medium (12 oz)", price: 28.00, quantity: 8 },
+                    { size: "Large (16 oz)", price: 32.00, quantity: 4 }
+                ],
                 lastBackup: "2025-02-05"
             },
             {
                 id: 2,
                 title: "Knitted Wool Scarf",
                 price: 45.00,
-                quantity: 8,
                 description: "Cozy hand-knitted wool scarf perfect for cold winter days. Made from 100% merino wool in a classic cable knit pattern.",
                 tags: ["knitted", "wool", "scarf", "winter", "handmade"],
+                photos: [
+                    "https://via.placeholder.com/600x400/E8927C/FFFFFF?text=Wool+Scarf",
+                    "https://via.placeholder.com/600x400/F5A491/FFFFFF?text=Scarf+Pattern",
+                    "https://via.placeholder.com/600x400/FFB6A3/FFFFFF?text=Scarf+Detail"
+                ],
+                variations: [
+                    { color: "Gray", price: 45.00, quantity: 3 },
+                    { color: "Navy Blue", price: 45.00, quantity: 5 },
+                    { color: "Burgundy", price: 48.00, quantity: 2 }
+                ],
                 lastBackup: "2025-02-03"
             },
             {
                 id: 3,
                 title: "Wooden Cutting Board",
                 price: 65.00,
-                quantity: 5,
                 description: "Premium cutting board made from sustainably sourced walnut and maple wood. Food-safe finish, perfect for any kitchen.",
                 tags: ["woodwork", "cutting board", "kitchen", "walnut", "handmade"],
+                photos: [
+                    "https://via.placeholder.com/600x400/8B6F47/FFFFFF?text=Cutting+Board",
+                    "https://via.placeholder.com/600x400/A68A5C/FFFFFF?text=Wood+Grain",
+                    "https://via.placeholder.com/600x400/C1A572/FFFFFF?text=Board+Detail"
+                ],
+                variations: [
+                    { size: "Small (10x14 inches)", price: 55.00, quantity: 3 },
+                    { size: "Medium (12x18 inches)", price: 65.00, quantity: 4 },
+                    { size: "Large (14x20 inches)", price: 85.00, quantity: 2 }
+                ],
                 lastBackup: "2025-02-05"
             }
         ];
@@ -934,24 +1009,64 @@
                         </div>
 
                         <div className="backup-preview">
-                            {listings.map(listing => (
-                                <div key={listing.id} className="backup-preview-item">
-                                    <div className="preview-label">Listing Name</div>
-                                    <div className="preview-value">{listing.title}</div>
+                            {listings.map(listing => {
+                                const variationKeys = listing.variations.length > 0
+                                    ? Object.keys(listing.variations[0]).filter(key => key !== 'price' && key !== 'quantity')
+                                    : [];
 
-                                    <div className="preview-label" style={{ marginTop: '12px' }}>Price</div>
-                                    <div className="preview-value">${listing.price.toFixed(2)}</div>
+                                return (
+                                    <div key={listing.id} className="backup-preview-item">
+                                        <div className="preview-label">Listing Name</div>
+                                        <div className="preview-value">{listing.title}</div>
 
-                                    <div className="preview-label" style={{ marginTop: '12px' }}>Quantity</div>
-                                    <div className="preview-value">{listing.quantity}</div>
+                                        <div className="preview-label" style={{ marginTop: '12px' }}>Base Price</div>
+                                        <div className="preview-value">${listing.price.toFixed(2)}</div>
 
-                                    <div className="preview-label" style={{ marginTop: '12px' }}>Description</div>
-                                    <div className="preview-value">{listing.description}</div>
+                                        <div className="preview-label" style={{ marginTop: '12px' }}>Photos</div>
+                                        <div className="preview-photos">
+                                            {listing.photos.map((photo, idx) => (
+                                                <img
+                                                    key={idx}
+                                                    src={photo}
+                                                    alt={`${listing.title} - Photo ${idx + 1}`}
+                                                    className="preview-photo"
+                                                />
+                                            ))}
+                                        </div>
+                                        <div className="preview-photo-count">{listing.photos.length} photo(s)</div>
 
-                                    <div className="preview-label" style={{ marginTop: '12px' }}>Tags</div>
-                                    <div className="preview-value">{listing.tags.join(', ')}</div>
-                                </div>
-                            ))}
+                                        <div className="preview-label" style={{ marginTop: '12px' }}>Variations</div>
+                                        <table className="variations-table">
+                                            <thead>
+                                                <tr>
+                                                    {variationKeys.map(key => (
+                                                        <th key={key}>{key.charAt(0).toUpperCase() + key.slice(1)}</th>
+                                                    ))}
+                                                    <th>Price</th>
+                                                    <th>Quantity</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {listing.variations.map((variation, idx) => (
+                                                    <tr key={idx}>
+                                                        {variationKeys.map(key => (
+                                                            <td key={key}>{variation[key]}</td>
+                                                        ))}
+                                                        <td>${variation.price.toFixed(2)}</td>
+                                                        <td>{variation.quantity}</td>
+                                                    </tr>
+                                                ))}
+                                            </tbody>
+                                        </table>
+
+                                        <div className="preview-label" style={{ marginTop: '12px' }}>Description</div>
+                                        <div className="preview-value">{listing.description}</div>
+
+                                        <div className="preview-label" style={{ marginTop: '12px' }}>Tags</div>
+                                        <div className="preview-value">{listing.tags.join(', ')}</div>
+                                    </div>
+                                );
+                            })}
                         </div>
 
                         <div className="modal-actions">
