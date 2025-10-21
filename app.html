@@ -1,0 +1,983 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Etsy Seller Tools - Backup & Version History</title>
+
+    <!-- React and ReactDOM from CDN -->
+    <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
+    <script crossorigin src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js"></script>
+    <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Graphik Webfont', -apple-system, BlinkMacSystemFont, 'Roboto', 'Droid Sans', 'Segoe UI', sans-serif;
+            background-color: #f5f5f5;
+            color: #222222;
+            line-height: 1.6;
+        }
+
+        /* Etsy Color Palette */
+        :root {
+            --etsy-orange: #F1641E;
+            --etsy-orange-hover: #E0521D;
+            --etsy-black: #222222;
+            --etsy-gray: #595959;
+            --etsy-light-gray: #e8e8e8;
+            --etsy-bg: #f5f5f5;
+            --etsy-white: #ffffff;
+            --success-green: #34A853;
+            --warning-yellow: #FBBC04;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        /* Header */
+        .header {
+            background-color: var(--etsy-white);
+            border-bottom: 1px solid var(--etsy-light-gray);
+            padding: 16px 0;
+            margin-bottom: 24px;
+        }
+
+        .header-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 0 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--etsy-orange);
+        }
+
+        .status-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            padding: 6px 12px;
+            background-color: #e8f5e9;
+            color: var(--success-green);
+            border-radius: 20px;
+            font-size: 14px;
+            font-weight: 500;
+        }
+
+        .status-dot {
+            width: 8px;
+            height: 8px;
+            background-color: var(--success-green);
+            border-radius: 50%;
+        }
+
+        /* Buttons */
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 24px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn-primary {
+            background-color: var(--etsy-orange);
+            color: white;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--etsy-orange-hover);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(241, 100, 30, 0.3);
+        }
+
+        .btn-secondary {
+            background-color: var(--etsy-white);
+            color: var(--etsy-black);
+            border: 2px solid var(--etsy-black);
+        }
+
+        .btn-secondary:hover {
+            background-color: var(--etsy-black);
+            color: white;
+        }
+
+        .btn-large {
+            padding: 16px 32px;
+            font-size: 18px;
+        }
+
+        /* Cards */
+        .card {
+            background-color: var(--etsy-white);
+            border-radius: 8px;
+            padding: 24px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            margin-bottom: 20px;
+        }
+
+        .card-title {
+            font-size: 20px;
+            font-weight: 600;
+            color: var(--etsy-black);
+            margin-bottom: 16px;
+        }
+
+        /* Connect Screen */
+        .connect-screen {
+            text-align: center;
+            padding: 80px 20px;
+        }
+
+        .connect-screen h1 {
+            font-size: 36px;
+            color: var(--etsy-black);
+            margin-bottom: 16px;
+        }
+
+        .connect-screen p {
+            font-size: 18px;
+            color: var(--etsy-gray);
+            margin-bottom: 32px;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+        }
+
+        /* Listings Table */
+        .listings-table-container {
+            background-color: var(--etsy-white);
+            border-radius: 8px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            overflow: hidden;
+        }
+
+        .listings-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .listings-table th {
+            background-color: var(--etsy-bg);
+            padding: 16px;
+            text-align: left;
+            font-size: 14px;
+            font-weight: 600;
+            color: var(--etsy-black);
+            border-bottom: 2px solid var(--etsy-light-gray);
+            cursor: pointer;
+            user-select: none;
+        }
+
+        .listings-table th:hover {
+            background-color: #e8e8e8;
+        }
+
+        .listings-table th.sortable::after {
+            content: ' ↕';
+            color: var(--etsy-gray);
+            font-size: 12px;
+        }
+
+        .listings-table th.sorted-asc::after {
+            content: ' ↑';
+            color: var(--etsy-orange);
+        }
+
+        .listings-table th.sorted-desc::after {
+            content: ' ↓';
+            color: var(--etsy-orange);
+        }
+
+        .listings-table td {
+            padding: 16px;
+            border-bottom: 1px solid var(--etsy-light-gray);
+            color: var(--etsy-black);
+        }
+
+        .listings-table tr:hover {
+            background-color: #fafafa;
+        }
+
+        .listings-table tr:last-child td {
+            border-bottom: none;
+        }
+
+        .checkbox-cell {
+            width: 40px;
+        }
+
+        .checkbox-cell input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+            accent-color: var(--etsy-orange);
+        }
+
+        .listing-name {
+            font-weight: 500;
+            color: var(--etsy-black);
+        }
+
+        .last-backup-date {
+            color: var(--etsy-gray);
+            font-size: 14px;
+        }
+
+        /* Toolbar */
+        .toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        .toolbar h2 {
+            font-size: 28px;
+            color: var(--etsy-black);
+        }
+
+        .backup-info {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            font-size: 14px;
+            color: var(--etsy-gray);
+        }
+
+        /* Backup History Selection */
+        .backup-list {
+            margin-top: 20px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .backup-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 12px 20px;
+            background-color: #fafafa;
+            border-radius: 8px;
+            margin-bottom: 10px;
+            border: 1px solid var(--etsy-light-gray);
+        }
+
+        .backup-info-section {
+            flex: 1;
+        }
+
+        .backup-date {
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--etsy-black);
+        }
+
+        .backup-actions {
+            display: flex;
+            gap: 8px;
+        }
+
+        .btn-small {
+            padding: 8px 16px;
+            font-size: 14px;
+        }
+
+        .backup-preview {
+            background-color: #fafafa;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+
+        .backup-preview-item {
+            margin-bottom: 16px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--etsy-light-gray);
+        }
+
+        .backup-preview-item:last-child {
+            border-bottom: none;
+            margin-bottom: 0;
+            padding-bottom: 0;
+        }
+
+        .preview-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: var(--etsy-gray);
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+
+        .preview-value {
+            font-size: 14px;
+            color: var(--etsy-black);
+        }
+
+        .modal-large {
+            max-width: 600px;
+        }
+
+        .select-all-row {
+            background-color: #fafafa;
+        }
+
+        .action-buttons {
+            display: flex;
+            gap: 12px;
+        }
+
+        /* Modal */
+        .modal-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: rgba(0, 0, 0, 0.5);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        .modal {
+            background-color: var(--etsy-white);
+            border-radius: 8px;
+            padding: 32px;
+            max-width: 500px;
+            width: 90%;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+        }
+
+        .modal-title {
+            font-size: 24px;
+            font-weight: 600;
+            color: var(--etsy-black);
+            margin-bottom: 16px;
+        }
+
+        .modal-text {
+            font-size: 16px;
+            color: var(--etsy-gray);
+            margin-bottom: 24px;
+        }
+
+        .modal-actions {
+            display: flex;
+            gap: 12px;
+            justify-content: flex-end;
+        }
+
+        /* Notification */
+        .notification {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background-color: var(--success-green);
+            color: white;
+            padding: 16px 24px;
+            border-radius: 8px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+            z-index: 1001;
+            animation: slideIn 0.3s ease;
+        }
+
+        @keyframes slideIn {
+            from {
+                transform: translateX(400px);
+                opacity: 0;
+            }
+            to {
+                transform: translateX(0);
+                opacity: 1;
+            }
+        }
+
+        /* Loading Spinner */
+        .spinner {
+            border: 3px solid var(--etsy-light-gray);
+            border-top: 3px solid var(--etsy-orange);
+            border-radius: 50%;
+            width: 24px;
+            height: 24px;
+            animation: spin 0.8s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .back-button {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            color: var(--etsy-gray);
+            font-size: 14px;
+            cursor: pointer;
+            margin-bottom: 16px;
+            transition: color 0.2s ease;
+        }
+
+        .back-button:hover {
+            color: var(--etsy-black);
+        }
+
+        @media (max-width: 768px) {
+            .toolbar {
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .listings-table-container {
+                overflow-x: auto;
+            }
+
+            .action-buttons {
+                flex-direction: column;
+                width: 100%;
+            }
+
+            .action-buttons .btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div id="root"></div>
+
+    <script type="text/babel">
+        const { useState, useEffect } = React;
+
+        // Mock Data
+        const MOCK_LISTINGS = [
+            {
+                id: 1,
+                title: "Handmade Ceramic Coffee Mug",
+                price: 28.00,
+                quantity: 15,
+                description: "Beautiful handcrafted ceramic mug with a stunning blue glaze finish. Perfect for your morning coffee or tea. Each piece is unique and made with care.",
+                tags: ["ceramic", "handmade", "coffee mug", "pottery", "blue"],
+                lastBackup: "2025-02-05"
+            },
+            {
+                id: 2,
+                title: "Knitted Wool Scarf",
+                price: 45.00,
+                quantity: 8,
+                description: "Cozy hand-knitted wool scarf perfect for cold winter days. Made from 100% merino wool in a classic cable knit pattern.",
+                tags: ["knitted", "wool", "scarf", "winter", "handmade"],
+                lastBackup: "2025-02-03"
+            },
+            {
+                id: 3,
+                title: "Wooden Cutting Board",
+                price: 65.00,
+                quantity: 5,
+                description: "Premium cutting board made from sustainably sourced walnut and maple wood. Food-safe finish, perfect for any kitchen.",
+                tags: ["woodwork", "cutting board", "kitchen", "walnut", "handmade"],
+                lastBackup: "2025-02-05"
+            }
+        ];
+
+        const MOCK_BACKUPS = [
+            {
+                id: 1,
+                date: "2025-01-15",
+                time: "14:23"
+            },
+            {
+                id: 2,
+                date: "2025-01-18",
+                time: "09:15"
+            },
+            {
+                id: 3,
+                date: "2025-01-22",
+                time: "16:45"
+            },
+            {
+                id: 4,
+                date: "2025-02-01",
+                time: "11:30"
+            },
+            {
+                id: 5,
+                date: "2025-02-05",
+                time: "13:20"
+            }
+        ];
+
+        function App() {
+            const [listings, setListings] = useState(MOCK_LISTINGS);
+            const [backups, setBackups] = useState(MOCK_BACKUPS);
+            const [selectedListings, setSelectedListings] = useState([]);
+            const [selectedBackup, setSelectedBackup] = useState(null);
+            const [showBackupModal, setShowBackupModal] = useState(false);
+            const [showBackupsListModal, setShowBackupsListModal] = useState(false);
+            const [showRestoreConfirmModal, setShowRestoreConfirmModal] = useState(false);
+            const [showBackupPreviewModal, setShowBackupPreviewModal] = useState(false);
+            const [previewBackup, setPreviewBackup] = useState(null);
+            const [notification, setNotification] = useState(null);
+            const [isLoading, setIsLoading] = useState(false);
+
+            const handleCreateBackup = () => {
+                if (selectedListings.length === 0) {
+                    showNotification("Please select at least one listing to backup");
+                    return;
+                }
+                setShowBackupModal(true);
+            };
+
+            const confirmBackup = () => {
+                setIsLoading(true);
+                setShowBackupModal(false);
+                setTimeout(() => {
+                    const newBackup = {
+                        id: backups.length + 1,
+                        date: new Date().toISOString().split('T')[0],
+                        time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })
+                    };
+                    setBackups([...backups, newBackup]);
+
+                    // Update lastBackup for selected listings
+                    const updatedListings = listings.map(listing =>
+                        selectedListings.includes(listing.id)
+                            ? { ...listing, lastBackup: newBackup.date }
+                            : listing
+                    );
+                    setListings(updatedListings);
+                    setSelectedListings([]);
+                    setIsLoading(false);
+                    showNotification(`Backup created for ${selectedListings.length} listing(s)!`);
+                }, 2000);
+            };
+
+            const handleShowBackupsList = () => {
+                if (selectedListings.length === 0) {
+                    showNotification("Please select at least one listing to restore");
+                    return;
+                }
+                setShowBackupsListModal(true);
+            };
+
+            const handleBackupSelection = (backup) => {
+                setSelectedBackup(backup);
+                setShowBackupsListModal(false);
+                setShowRestoreConfirmModal(true);
+            };
+
+            const handleViewBackup = (backup) => {
+                setPreviewBackup(backup);
+                setShowBackupPreviewModal(true);
+            };
+
+            const confirmRestore = () => {
+                setIsLoading(true);
+                setShowRestoreConfirmModal(false);
+                setTimeout(() => {
+                    setIsLoading(false);
+                    showNotification(`${selectedListings.length} listing(s) restored successfully!`);
+                    setSelectedListings([]);
+                    setSelectedBackup(null);
+                }, 1500);
+            };
+
+            const handleDownloadJSON = (backup) => {
+                // Get selected listings data
+                const selectedListingsData = listings.filter(l => selectedListings.includes(l.id));
+
+                const backupData = {
+                    backupId: backup.id,
+                    date: backup.date,
+                    time: backup.time,
+                    listings: selectedListingsData
+                };
+
+                const dataStr = JSON.stringify(backupData, null, 2);
+                const dataBlob = new Blob([dataStr], { type: 'application/json' });
+                const url = URL.createObjectURL(dataBlob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `etsy-backup-${backup.date}-${backup.time.replace(':', '')}.json`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                URL.revokeObjectURL(url);
+
+                showNotification("Backup JSON downloaded!");
+            };
+
+            const showNotification = (message) => {
+                setNotification(message);
+                setTimeout(() => setNotification(null), 3000);
+            };
+
+            return (
+                <>
+                    <Header />
+                    <div className="container">
+                        <Dashboard
+                            listings={listings}
+                            selectedListings={selectedListings}
+                            setSelectedListings={setSelectedListings}
+                            onCreateBackup={handleCreateBackup}
+                            onRestore={handleShowBackupsList}
+                            isLoading={isLoading}
+                        />
+                    </div>
+                    {notification && <Notification message={notification} />}
+                    {showBackupModal && (
+                        <BackupModal
+                            count={selectedListings.length}
+                            onConfirm={confirmBackup}
+                            onCancel={() => setShowBackupModal(false)}
+                        />
+                    )}
+                    {showBackupsListModal && (
+                        <BackupsListModal
+                            backups={backups}
+                            selectedListings={selectedListings}
+                            onBackupSelect={handleBackupSelection}
+                            onViewBackup={handleViewBackup}
+                            onCancel={() => setShowBackupsListModal(false)}
+                        />
+                    )}
+                    {showRestoreConfirmModal && (
+                        <RestoreConfirmModal
+                            count={selectedListings.length}
+                            backup={selectedBackup}
+                            onConfirm={confirmRestore}
+                            onCancel={() => {
+                                setShowRestoreConfirmModal(false);
+                                setShowBackupsListModal(true);
+                            }}
+                        />
+                    )}
+                    {showBackupPreviewModal && (
+                        <BackupPreviewModal
+                            backup={previewBackup}
+                            listings={listings.filter(l => selectedListings.includes(l.id))}
+                            onDownloadJSON={() => handleDownloadJSON(previewBackup)}
+                            onCancel={() => setShowBackupPreviewModal(false)}
+                        />
+                    )}
+                </>
+            );
+        }
+
+        function Header() {
+            return (
+                <div className="header">
+                    <div className="header-content">
+                        <div className="logo">Etsy Seller Tools</div>
+                        <div className="status-badge">
+                            <span className="status-dot"></span>
+                            Connected to Etsy
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        function Dashboard({ listings, selectedListings, setSelectedListings, onCreateBackup, onRestore, isLoading }) {
+            const [sortField, setSortField] = useState('title');
+            const [sortDirection, setSortDirection] = useState('asc');
+
+            const handleSort = (field) => {
+                if (sortField === field) {
+                    setSortDirection(sortDirection === 'asc' ? 'desc' : 'asc');
+                } else {
+                    setSortField(field);
+                    setSortDirection('asc');
+                }
+            };
+
+            const sortedListings = [...listings].sort((a, b) => {
+                let aVal = a[sortField];
+                let bVal = b[sortField];
+
+                if (sortField === 'title') {
+                    aVal = aVal.toLowerCase();
+                    bVal = bVal.toLowerCase();
+                }
+
+                if (sortDirection === 'asc') {
+                    return aVal > bVal ? 1 : -1;
+                } else {
+                    return aVal < bVal ? 1 : -1;
+                }
+            });
+
+            const handleSelectAll = (e) => {
+                if (e.target.checked) {
+                    setSelectedListings(listings.map(l => l.id));
+                } else {
+                    setSelectedListings([]);
+                }
+            };
+
+            const handleSelectListing = (id) => {
+                if (selectedListings.includes(id)) {
+                    setSelectedListings(selectedListings.filter(i => i !== id));
+                } else {
+                    setSelectedListings([...selectedListings, id]);
+                }
+            };
+
+            const allSelected = selectedListings.length === listings.length;
+            const someSelected = selectedListings.length > 0 && selectedListings.length < listings.length;
+
+            return (
+                <>
+                    <div className="toolbar">
+                        <h2>Your Listings</h2>
+                        <div className="action-buttons">
+                            <button
+                                className="btn btn-secondary"
+                                onClick={onRestore}
+                                disabled={isLoading || selectedListings.length === 0}
+                            >
+                                Restore from Backup
+                            </button>
+                            <button
+                                className="btn btn-primary"
+                                onClick={onCreateBackup}
+                                disabled={isLoading || selectedListings.length === 0}
+                            >
+                                {isLoading ? (
+                                    <>
+                                        <div className="spinner"></div>
+                                        Creating Backup...
+                                    </>
+                                ) : (
+                                    'Create Backup'
+                                )}
+                            </button>
+                        </div>
+                    </div>
+
+                    <div className="listings-table-container">
+                        <table className="listings-table">
+                            <thead>
+                                <tr>
+                                    <th className="checkbox-cell">
+                                        <input
+                                            type="checkbox"
+                                            checked={allSelected}
+                                            ref={input => {
+                                                if (input) input.indeterminate = someSelected;
+                                            }}
+                                            onChange={handleSelectAll}
+                                        />
+                                    </th>
+                                    <th
+                                        className={`sortable ${sortField === 'title' ? `sorted-${sortDirection}` : ''}`}
+                                        onClick={() => handleSort('title')}
+                                    >
+                                        Name
+                                    </th>
+                                    <th
+                                        className={`sortable ${sortField === 'lastBackup' ? `sorted-${sortDirection}` : ''}`}
+                                        onClick={() => handleSort('lastBackup')}
+                                    >
+                                        Last Backup
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {sortedListings.map(listing => (
+                                    <tr key={listing.id}>
+                                        <td className="checkbox-cell">
+                                            <input
+                                                type="checkbox"
+                                                checked={selectedListings.includes(listing.id)}
+                                                onChange={() => handleSelectListing(listing.id)}
+                                            />
+                                        </td>
+                                        <td>
+                                            <div className="listing-name">{listing.title}</div>
+                                        </td>
+                                        <td>
+                                            <div className="last-backup-date">{listing.lastBackup}</div>
+                                        </td>
+                                    </tr>
+                                ))}
+                            </tbody>
+                        </table>
+                    </div>
+                </>
+            );
+        }
+
+        function BackupsListModal({ backups, selectedListings, onBackupSelect, onViewBackup, onCancel }) {
+            return (
+                <div className="modal-overlay" onClick={onCancel}>
+                    <div className="modal modal-large" onClick={(e) => e.stopPropagation()}>
+                        <div className="modal-title">Select Backup to Restore</div>
+                        <div className="modal-text">
+                            Restoring {selectedListings.length} listing{selectedListings.length > 1 ? 's' : ''}.
+                            Choose a backup date to restore from.
+                        </div>
+
+                        <div className="backup-list">
+                            {[...backups].reverse().map(backup => (
+                                <div key={backup.id} className="backup-item">
+                                    <div className="backup-info-section">
+                                        <div className="backup-date">{backup.date} {backup.time}</div>
+                                    </div>
+                                    <div className="backup-actions">
+                                        <button
+                                            className="btn btn-secondary btn-small"
+                                            onClick={() => onViewBackup(backup)}
+                                        >
+                                            View
+                                        </button>
+                                        <button
+                                            className="btn btn-primary btn-small"
+                                            onClick={() => onBackupSelect(backup)}
+                                        >
+                                            Restore
+                                        </button>
+                                    </div>
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="modal-actions" style={{ marginTop: '20px' }}>
+                            <button className="btn btn-secondary" onClick={onCancel}>
+                                Cancel
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        function BackupModal({ count, onConfirm, onCancel }) {
+            return (
+                <div className="modal-overlay">
+                    <div className="modal">
+                        <div className="modal-title">Create Backup?</div>
+                        <div className="modal-text">
+                            This will create a backup of {count} listing{count > 1 ? 's' : ''}.
+                            You can restore to this version at any time.
+                        </div>
+                        <div className="modal-actions">
+                            <button className="btn btn-secondary" onClick={onCancel}>
+                                Cancel
+                            </button>
+                            <button className="btn btn-primary" onClick={onConfirm}>
+                                Create Backup
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        function RestoreConfirmModal({ count, backup, onConfirm, onCancel }) {
+            return (
+                <div className="modal-overlay">
+                    <div className="modal">
+                        <div className="modal-title">Restore Backup?</div>
+                        <div className="modal-text">
+                            This will restore {count} listing{count > 1 ? 's' : ''} to the backup from {backup?.date} at {backup?.time}.
+                            Your current listing data will be backed up automatically before restoring.
+                        </div>
+                        <div className="modal-actions">
+                            <button className="btn btn-secondary" onClick={onCancel}>
+                                Back
+                            </button>
+                            <button className="btn btn-primary" onClick={onConfirm}>
+                                Restore
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        function BackupPreviewModal({ backup, listings, onDownloadJSON, onCancel }) {
+            return (
+                <div className="modal-overlay" onClick={onCancel}>
+                    <div className="modal modal-large" onClick={(e) => e.stopPropagation()}>
+                        <div className="modal-title">Backup Preview</div>
+                        <div className="modal-text">
+                            Backup from {backup?.date} at {backup?.time}
+                        </div>
+
+                        <div className="backup-preview">
+                            {listings.map(listing => (
+                                <div key={listing.id} className="backup-preview-item">
+                                    <div className="preview-label">Listing Name</div>
+                                    <div className="preview-value">{listing.title}</div>
+
+                                    <div className="preview-label" style={{ marginTop: '12px' }}>Price</div>
+                                    <div className="preview-value">${listing.price.toFixed(2)}</div>
+
+                                    <div className="preview-label" style={{ marginTop: '12px' }}>Quantity</div>
+                                    <div className="preview-value">{listing.quantity}</div>
+
+                                    <div className="preview-label" style={{ marginTop: '12px' }}>Description</div>
+                                    <div className="preview-value">{listing.description}</div>
+
+                                    <div className="preview-label" style={{ marginTop: '12px' }}>Tags</div>
+                                    <div className="preview-value">{listing.tags.join(', ')}</div>
+                                </div>
+                            ))}
+                        </div>
+
+                        <div className="modal-actions">
+                            <button className="btn btn-secondary" onClick={onCancel}>
+                                Close
+                            </button>
+                            <button className="btn btn-primary" onClick={onDownloadJSON}>
+                                Download JSON
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
+        function Notification({ message }) {
+            return (
+                <div className="notification">
+                    {message}
+                </div>
+            );
+        }
+
+        // Render the app
+        const root = ReactDOM.createRoot(document.getElementById('root'));
+        root.render(<App />);
+    </script>
+</body>
+</html>
