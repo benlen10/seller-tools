@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Etsy Seller Tools - Backup & Version History</title>
+    <title>Seller Tools - Backup & Version History</title>
 
     <!-- React and ReactDOM from CDN -->
     <script crossorigin src="https://unpkg.com/react@18/umd/react.production.min.js"></script>
@@ -24,15 +24,15 @@
             line-height: 1.6;
         }
 
-        /* Etsy Color Palette */
+        /* Color Palette */
         :root {
-            --etsy-orange: #F1641E;
-            --etsy-orange-hover: #E0521D;
-            --etsy-black: #222222;
-            --etsy-gray: #595959;
-            --etsy-light-gray: #e8e8e8;
-            --etsy-bg: #f5f5f5;
-            --etsy-white: #ffffff;
+            --primary-color: #4A90E2;
+            --primary-hover: #357ABD;
+            --text-black: #222222;
+            --text-gray: #595959;
+            --border-gray: #e8e8e8;
+            --bg-gray: #f5f5f5;
+            --bg-white: #ffffff;
             --success-green: #34A853;
             --warning-yellow: #FBBC04;
         }
@@ -45,8 +45,8 @@
 
         /* Header */
         .header {
-            background-color: var(--etsy-white);
-            border-bottom: 1px solid var(--etsy-light-gray);
+            background-color: var(--bg-white);
+            border-bottom: 1px solid var(--border-gray);
             padding: 16px 0;
             margin-bottom: 24px;
         }
@@ -63,7 +63,7 @@
         .logo {
             font-size: 24px;
             font-weight: 600;
-            color: var(--etsy-orange);
+            color: var(--primary-color);
         }
 
         .status-badge {
@@ -100,24 +100,24 @@
         }
 
         .btn-primary {
-            background-color: var(--etsy-orange);
+            background-color: var(--primary-color);
             color: white;
         }
 
         .btn-primary:hover {
-            background-color: var(--etsy-orange-hover);
+            background-color: var(--primary-hover);
             transform: translateY(-1px);
-            box-shadow: 0 4px 12px rgba(241, 100, 30, 0.3);
+            box-shadow: 0 4px 12px rgba(74, 144, 226, 0.3);
         }
 
         .btn-secondary {
-            background-color: var(--etsy-white);
-            color: var(--etsy-black);
-            border: 2px solid var(--etsy-black);
+            background-color: var(--bg-white);
+            color: var(--text-black);
+            border: 2px solid var(--text-black);
         }
 
         .btn-secondary:hover {
-            background-color: var(--etsy-black);
+            background-color: var(--text-black);
             color: white;
         }
 
@@ -128,7 +128,7 @@
 
         /* Cards */
         .card {
-            background-color: var(--etsy-white);
+            background-color: var(--bg-white);
             border-radius: 8px;
             padding: 24px;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
@@ -138,7 +138,7 @@
         .card-title {
             font-size: 20px;
             font-weight: 600;
-            color: var(--etsy-black);
+            color: var(--text-black);
             margin-bottom: 16px;
         }
 
@@ -150,13 +150,13 @@
 
         .connect-screen h1 {
             font-size: 36px;
-            color: var(--etsy-black);
+            color: var(--text-black);
             margin-bottom: 16px;
         }
 
         .connect-screen p {
             font-size: 18px;
-            color: var(--etsy-gray);
+            color: var(--text-gray);
             margin-bottom: 32px;
             max-width: 600px;
             margin-left: auto;
@@ -165,7 +165,7 @@
 
         /* Listings Table */
         .listings-table-container {
-            background-color: var(--etsy-white);
+            background-color: var(--bg-white);
             border-radius: 8px;
             box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
             overflow: hidden;
@@ -177,13 +177,13 @@
         }
 
         .listings-table th {
-            background-color: var(--etsy-bg);
+            background-color: var(--bg-gray);
             padding: 16px;
             text-align: left;
             font-size: 14px;
             font-weight: 600;
-            color: var(--etsy-black);
-            border-bottom: 2px solid var(--etsy-light-gray);
+            color: var(--text-black);
+            border-bottom: 2px solid var(--border-gray);
             cursor: pointer;
             user-select: none;
         }
@@ -194,24 +194,24 @@
 
         .listings-table th.sortable::after {
             content: ' ↕';
-            color: var(--etsy-gray);
+            color: var(--text-gray);
             font-size: 12px;
         }
 
         .listings-table th.sorted-asc::after {
             content: ' ↑';
-            color: var(--etsy-orange);
+            color: var(--primary-color);
         }
 
         .listings-table th.sorted-desc::after {
             content: ' ↓';
-            color: var(--etsy-orange);
+            color: var(--primary-color);
         }
 
         .listings-table td {
             padding: 16px;
-            border-bottom: 1px solid var(--etsy-light-gray);
-            color: var(--etsy-black);
+            border-bottom: 1px solid var(--border-gray);
+            color: var(--text-black);
         }
 
         .listings-table tr:hover {
@@ -230,16 +230,16 @@
             width: 18px;
             height: 18px;
             cursor: pointer;
-            accent-color: var(--etsy-orange);
+            accent-color: var(--primary-color);
         }
 
         .listing-name {
             font-weight: 500;
-            color: var(--etsy-black);
+            color: var(--text-black);
         }
 
         .last-backup-date {
-            color: var(--etsy-gray);
+            color: var(--text-gray);
             font-size: 14px;
         }
 
@@ -255,7 +255,7 @@
 
         .toolbar h2 {
             font-size: 28px;
-            color: var(--etsy-black);
+            color: var(--text-black);
         }
 
         .backup-info {
@@ -263,7 +263,7 @@
             align-items: center;
             gap: 12px;
             font-size: 14px;
-            color: var(--etsy-gray);
+            color: var(--text-gray);
         }
 
         /* Backup History Selection */
@@ -281,7 +281,7 @@
             background-color: #fafafa;
             border-radius: 8px;
             margin-bottom: 10px;
-            border: 1px solid var(--etsy-light-gray);
+            border: 1px solid var(--border-gray);
         }
 
         .backup-info-section {
@@ -291,7 +291,7 @@
         .backup-date {
             font-size: 16px;
             font-weight: 600;
-            color: var(--etsy-black);
+            color: var(--text-black);
         }
 
         .backup-actions {
@@ -316,7 +316,7 @@
         .backup-preview-item {
             margin-bottom: 16px;
             padding-bottom: 16px;
-            border-bottom: 1px solid var(--etsy-light-gray);
+            border-bottom: 1px solid var(--border-gray);
         }
 
         .backup-preview-item:last-child {
@@ -328,14 +328,14 @@
         .preview-label {
             font-size: 12px;
             font-weight: 600;
-            color: var(--etsy-gray);
+            color: var(--text-gray);
             text-transform: uppercase;
             margin-bottom: 4px;
         }
 
         .preview-value {
             font-size: 14px;
-            color: var(--etsy-black);
+            color: var(--text-black);
         }
 
         .preview-photos {
@@ -350,12 +350,12 @@
             height: 100px;
             object-fit: cover;
             border-radius: 4px;
-            border: 1px solid var(--etsy-light-gray);
+            border: 1px solid var(--border-gray);
         }
 
         .preview-photo-count {
             font-size: 14px;
-            color: var(--etsy-gray);
+            color: var(--text-gray);
             margin-top: 8px;
         }
 
@@ -367,19 +367,19 @@
         }
 
         .variations-table th {
-            background-color: var(--etsy-bg);
+            background-color: var(--bg-gray);
             padding: 8px 12px;
             text-align: left;
             font-weight: 600;
-            border-bottom: 1px solid var(--etsy-light-gray);
-            color: var(--etsy-black);
+            border-bottom: 1px solid var(--border-gray);
+            color: var(--text-black);
             font-size: 12px;
             text-transform: uppercase;
         }
 
         .variations-table td {
             padding: 8px 12px;
-            border-bottom: 1px solid var(--etsy-light-gray);
+            border-bottom: 1px solid var(--border-gray);
         }
 
         .variations-table tr:last-child td {
@@ -414,7 +414,7 @@
         }
 
         .modal {
-            background-color: var(--etsy-white);
+            background-color: var(--bg-white);
             border-radius: 8px;
             padding: 32px;
             max-width: 500px;
@@ -425,13 +425,13 @@
         .modal-title {
             font-size: 24px;
             font-weight: 600;
-            color: var(--etsy-black);
+            color: var(--text-black);
             margin-bottom: 16px;
         }
 
         .modal-text {
             font-size: 16px;
-            color: var(--etsy-gray);
+            color: var(--text-gray);
             margin-bottom: 24px;
         }
 
@@ -468,8 +468,8 @@
 
         /* Loading Spinner */
         .spinner {
-            border: 3px solid var(--etsy-light-gray);
-            border-top: 3px solid var(--etsy-orange);
+            border: 3px solid var(--border-gray);
+            border-top: 3px solid var(--primary-color);
             border-radius: 50%;
             width: 24px;
             height: 24px;
@@ -485,7 +485,7 @@
             display: inline-flex;
             align-items: center;
             gap: 8px;
-            color: var(--etsy-gray);
+            color: var(--text-gray);
             font-size: 14px;
             cursor: pointer;
             margin-bottom: 16px;
@@ -493,7 +493,7 @@
         }
 
         .back-button:hover {
-            color: var(--etsy-black);
+            color: var(--text-black);
         }
 
         @media (max-width: 768px) {
@@ -700,7 +700,7 @@
                 const url = URL.createObjectURL(dataBlob);
                 const link = document.createElement('a');
                 link.href = url;
-                link.download = `etsy-backup-${backup.date}-${backup.time.replace(':', '')}.json`;
+                link.download = `listing-backup-${backup.date}-${backup.time.replace(':', '')}.json`;
                 document.body.appendChild(link);
                 link.click();
                 document.body.removeChild(link);
@@ -771,10 +771,10 @@
             return (
                 <div className="header">
                     <div className="header-content">
-                        <div className="logo">Etsy Seller Tools</div>
+                        <div className="logo">Seller Tools</div>
                         <div className="status-badge">
                             <span className="status-dot"></span>
-                            Connected to Etsy
+                            Connected
                         </div>
                     </div>
                 </div>
