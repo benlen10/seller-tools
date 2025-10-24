@@ -1039,17 +1039,37 @@
         }
 
         function BackupsListModal({ backups, selectedListings, onBackupSelect, onViewBackup, onCancel }) {
+            // Filter backups to only show those that contain at least one selected listing
+            const relevantBackups = backups.filter(backup => {
+                if (!backup.listingIds || backup.listingIds.length === 0) return false;
+                return backup.listingIds.some(id => selectedListings.includes(id));
+            });
+
             return (
                 <div className="modal-overlay" onClick={onCancel}>
                     <div className="modal modal-large" onClick={(e) => e.stopPropagation()}>
                         <div className="modal-title">Select Backup to Restore</div>
                         <div className="modal-text">
                             Restoring {selectedListings.length} listing{selectedListings.length > 1 ? 's' : ''}.
-                            Choose a backup date to restore from.
+                            {relevantBackups.length === 0 ? (
+                                <span style={{ display: 'block', marginTop: '8px', color: 'var(--warning-yellow)' }}>
+                                    No backups found for the selected listing(s).
+                                </span>
+                            ) : (
+                                <span style={{ display: 'block', marginTop: '8px' }}>
+                                    Found {relevantBackups.length} backup{relevantBackups.length > 1 ? 's' : ''} for the selected listing(s).
+                                </span>
+                            )}
                         </div>
 
                         <div className="backup-list">
-                            {[...backups].reverse().map(backup => (
+                            {relevantBackups.length === 0 ? (
+                                <div style={{ textAlign: 'center', padding: '40px 20px', color: 'var(--text-gray)' }}>
+                                    <p>No backups available for the selected listing(s).</p>
+                                    <p style={{ marginTop: '8px', fontSize: '14px' }}>Create a backup first to restore later.</p>
+                                </div>
+                            ) : (
+                                relevantBackups.map(backup => (
                                 <div key={backup.id} className="backup-item">
                                     <div className="backup-info-section">
                                         <div className="backup-date">{backup.date} {backup.time}</div>
@@ -1069,7 +1089,8 @@
                                         </button>
                                     </div>
                                 </div>
-                            ))}
+                                ))
+                            )}
                         </div>
 
                         <div className="modal-actions" style={{ marginTop: '20px' }}>
