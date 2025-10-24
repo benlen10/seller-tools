@@ -4,9 +4,20 @@ const cors = require('cors');
 const session = require('express-session');
 const crypto = require('crypto');
 const axios = require('axios');
+const fs = require('fs');
+const path = require('path');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+// Backup storage directory
+const BACKUPS_DIR = path.join(__dirname, 'backups');
+
+// Ensure backups directory exists
+if (!fs.existsSync(BACKUPS_DIR)) {
+    fs.mkdirSync(BACKUPS_DIR, { recursive: true });
+    console.log('📁 Created backups directory');
+}
 
 // Middleware
 app.use(cors({
@@ -348,6 +359,206 @@ app.get('/api/listings/:listingId', requireAuth, async (req, res) => {
         res.status(error.response?.status || 500).json({
             error: 'Failed to fetch listing'
         });
+    }
+});
+
+// ============================================
+// BACKUP ROUTES
+// ============================================
+
+// Helper function to get all backup files
+function getAllBackups() {
+    try {
+        const files = fs.readdirSync(BACKUPS_DIR);
+        const backups = files
+            .filter(file => file.endsWith('.json'))
+            .map(file => {
+                const filePath = path.join(BACKUPS_DIR, file);
+                const data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+                return {
+                    id: data.id,
+                    date: data.date,
+                    time: data.time,
+                    listingIds: data.listings.map(l => l.id),
+                    listingCount: data.listings.length
+                };
+            })
+            .sort((a, b) => {
+                // Sort by date desc, then time desc
+                const dateCompare = b.date.localeCompare(a.date);
+                if (dateCompare !== 0) return dateCompare;
+                return b.time.localeCompare(a.time);
+            });
+        return backups;
+    } catch (error) {
+        console.error('Error reading backups:', error);
+        return [];
+    }
+}
+
+// Get all backups
+app.get('/api/backups', requireAuth, (req, res) => {
+    try {
+        const backups = getAllBackups();
+        res.json({
+            count: backups.length,
+            results: backups
+        });
+    } catch (error) {
+        console.error('Error fetching backups:', error);
+        res.status(500).json({ error: 'Failed to fetch backups' });
+    }
+});
+
+// Create a new backup
+app.post('/api/backups', requireAuth, async (req, res) => {
+    try {
+        const { listingIds } = req.body;
+
+        if (!listingIds || !Array.isArray(listingIds) || listingIds.length === 0) {
+            return res.status(400).json({ error: 'listingIds array is required' });
+        }
+
+        // Fetch current data for selected listings
+        const listingsData = [];
+        for (const listingId of listingIds) {
+            try {
+                const response = await axios.get(
+                    `${ETSY_BASE_URL}/application/listings/${listingId}`,
+                    {
+                        params: {
+                            includes: 'Images,Inventory'
+                        },
+                        headers: {
+                            'Authorization': `Bearer ${req.session.accessToken}`,
+                            'x-api-key': ETSY_API_KEY
+                        }
+                    }
+                );
+
+                const listing = response.data;
+
+                // Transform to app format for consistent backup storage
+                const photos = listing.images?.map(img => img.url_fullxfull || img.url_570xN) || [];
+
+                const variations = [];
+                if (listing.inventory?.products) {
+                    listing.inventory.products.forEach(product => {
+                        const variationData = {};
+
+                        if (product.property_values) {
+                            product.property_values.forEach(prop => {
+                                const propName = prop.property_name || 'option';
+                                variationData[propName.toLowerCase()] = prop.values?.[0] || '';
+                            });
+                        }
+
+                        variationData.price = product.offerings?.[0]?.price?.amount /
+                                             product.offerings?.[0]?.price?.divisor || listing.price.amount / listing.price.divisor;
+                        variationData.quantity = product.offerings?.[0]?.quantity || 0;
+
+                        if (Object.keys(variationData).length > 2) {
+                            variations.push(variationData);
+                        }
+                    });
+                }
+
+                if (variations.length === 0) {
+                    variations.push({
+                        option: 'Default',
+                        price: listing.price.amount / listing.price.divisor,
+                        quantity: listing.quantity
+                    });
+                }
+
+                const transformedListing = {
+                    id: listing.listing_id,
+                    title: listing.title,
+                    price: listing.price.amount / listing.price.divisor,
+                    description: listing.description || '',
+                    tags: listing.tags || [],
+                    photos: photos,
+                    variations: variations,
+                    etsyUrl: listing.url,
+                    state: listing.state
+                };
+
+                listingsData.push(transformedListing);
+            } catch (error) {
+                console.error(`Error fetching listing ${listingId}:`, error.message);
+                // Continue with other listings
+            }
+        }
+
+        // Create backup object
+        const now = new Date();
+        const backup = {
+            id: Date.now(),
+            date: now.toISOString().split('T')[0],
+            time: now.toTimeString().substring(0, 5),
+            timestamp: now.toISOString(),
+            listings: listingsData
+        };
+
+        // Save to file
+        const filename = `backup-${backup.id}.json`;
+        const filePath = path.join(BACKUPS_DIR, filename);
+        fs.writeFileSync(filePath, JSON.stringify(backup, null, 2));
+
+        console.log(`✅ Created backup ${backup.id} with ${listingsData.length} listings`);
+
+        res.json({
+            success: true,
+            backup: {
+                id: backup.id,
+                date: backup.date,
+                time: backup.time,
+                listingCount: listingsData.length
+            }
+        });
+    } catch (error) {
+        console.error('Error creating backup:', error);
+        res.status(500).json({ error: 'Failed to create backup' });
+    }
+});
+
+// Get specific backup details
+app.get('/api/backups/:backupId', requireAuth, (req, res) => {
+    try {
+        const { backupId } = req.params;
+        const filename = `backup-${backupId}.json`;
+        const filePath = path.join(BACKUPS_DIR, filename);
+
+        if (!fs.existsSync(filePath)) {
+            return res.status(404).json({ error: 'Backup not found' });
+        }
+
+        const backup = JSON.parse(fs.readFileSync(filePath, 'utf8'));
+        res.json(backup);
+    } catch (error) {
+        console.error('Error fetching backup:', error);
+        res.status(500).json({ error: 'Failed to fetch backup' });
+    }
+});
+
+// Delete a backup
+app.delete('/api/backups/:backupId', requireAuth, (req, res) => {
+    try {
+        const { backupId } = req.params;
+        const filename = `backup-${backupId}.json`;
+        const filePath = path.join(BACKUPS_DIR, filename);
+
+        if (!fs.existsSync(filePath)) {
+            return res.status(404).json({ error: 'Backup not found' });
+        }
+
+        fs.unlinkSync(filePath);
+        console.log(`🗑️  Deleted backup ${backupId}`);
+
+        res.json({ success: true });
+    } catch (error) {
+        console.error('Error deleting backup:', error);
+        res.status(500).json({ error: 'Failed to delete backup' });
     }
 });
 

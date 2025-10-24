@@ -525,40 +525,11 @@
 
         const API_BASE_URL = 'http://localhost:3000/api';
 
-        // Mock backups data (will be replaced with database in future)
-        const MOCK_BACKUPS = [
-            {
-                id: 1,
-                date: "2025-01-15",
-                time: "14:23"
-            },
-            {
-                id: 2,
-                date: "2025-01-18",
-                time: "09:15"
-            },
-            {
-                id: 3,
-                date: "2025-01-22",
-                time: "16:45"
-            },
-            {
-                id: 4,
-                date: "2025-02-01",
-                time: "11:30"
-            },
-            {
-                id: 5,
-                date: "2025-02-05",
-                time: "13:20"
-            }
-        ];
-
         function App() {
             const [isAuthenticated, setIsAuthenticated] = useState(false);
             const [authCheckComplete, setAuthCheckComplete] = useState(false);
             const [listings, setListings] = useState([]);
-            const [backups, setBackups] = useState(MOCK_BACKUPS);
+            const [backups, setBackups] = useState([]);
             const [selectedListings, setSelectedListings] = useState([]);
             const [selectedBackup, setSelectedBackup] = useState(null);
             const [showBackupModal, setShowBackupModal] = useState(false);
@@ -574,10 +545,11 @@
                 checkAuthStatus();
             }, []);
 
-            // Fetch listings when authenticated
+            // Fetch listings and backups when authenticated
             useEffect(() => {
                 if (isAuthenticated) {
                     fetchListings();
+                    fetchBackups();
                 }
             }, [isAuthenticated]);
 
@@ -623,13 +595,70 @@
                     }
 
                     const data = await response.json();
-                    setListings(data.results || []);
+
+                    // Merge backup metadata with listings
+                    const listingsWithBackupInfo = await enrichListingsWithBackupInfo(data.results || []);
+                    setListings(listingsWithBackupInfo);
                     showNotification(`Loaded ${data.count} listings from Etsy!`);
                 } catch (error) {
                     console.error('Error fetching listings:', error);
                     showNotification('Failed to load listings from Etsy');
                 } finally {
                     setIsLoading(false);
+                }
+            };
+
+            const enrichListingsWithBackupInfo = async (listings) => {
+                try {
+                    const backupsResponse = await fetch(`${API_BASE_URL}/backups`, {
+                        credentials: 'include'
+                    });
+
+                    if (backupsResponse.ok) {
+                        const backupsData = await backupsResponse.json();
+                        const allBackups = backupsData.results || [];
+
+                        // For each listing, find the most recent backup that includes it
+                        return listings.map(listing => {
+                            const listingBackups = allBackups.filter(backup =>
+                                backup.listingIds && backup.listingIds.includes(listing.id)
+                            );
+
+                            if (listingBackups.length > 0) {
+                                // Get most recent backup
+                                const mostRecent = listingBackups[0]; // Already sorted by date/time desc
+                                return {
+                                    ...listing,
+                                    lastBackup: mostRecent.date
+                                };
+                            }
+
+                            return {
+                                ...listing,
+                                lastBackup: null
+                            };
+                        });
+                    }
+
+                    return listings.map(l => ({ ...l, lastBackup: null }));
+                } catch (error) {
+                    console.error('Error enriching listings with backup info:', error);
+                    return listings.map(l => ({ ...l, lastBackup: null }));
+                }
+            };
+
+            const fetchBackups = async () => {
+                try {
+                    const response = await fetch(`${API_BASE_URL}/backups`, {
+                        credentials: 'include'
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+                        setBackups(data.results || []);
+                    }
+                } catch (error) {
+                    console.error('Error fetching backups:', error);
                 }
             };
 
@@ -641,28 +670,46 @@
                 setShowBackupModal(true);
             };
 
-            const confirmBackup = () => {
+            const confirmBackup = async () => {
                 setIsLoading(true);
                 setShowBackupModal(false);
-                setTimeout(() => {
-                    const newBackup = {
-                        id: backups.length + 1,
-                        date: new Date().toISOString().split('T')[0],
-                        time: new Date().toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit', hour12: false })
-                    };
-                    setBackups([...backups, newBackup]);
 
-                    // Update lastBackup for selected listings
-                    const updatedListings = listings.map(listing =>
-                        selectedListings.includes(listing.id)
-                            ? { ...listing, lastBackup: newBackup.date }
-                            : listing
-                    );
-                    setListings(updatedListings);
-                    setSelectedListings([]);
+                try {
+                    const response = await fetch(`${API_BASE_URL}/backups`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json'
+                        },
+                        credentials: 'include',
+                        body: JSON.stringify({
+                            listingIds: selectedListings
+                        })
+                    });
+
+                    if (response.ok) {
+                        const data = await response.json();
+
+                        // Refresh backups list
+                        await fetchBackups();
+
+                        // Update lastBackup for selected listings
+                        const updatedListings = listings.map(listing =>
+                            selectedListings.includes(listing.id)
+                                ? { ...listing, lastBackup: data.backup.date }
+                                : listing
+                        );
+                        setListings(updatedListings);
+                        setSelectedListings([]);
+                        showNotification(`Backup created for ${data.backup.listingCount} listing(s)!`);
+                    } else {
+                        showNotification('Failed to create backup');
+                    }
+                } catch (error) {
+                    console.error('Error creating backup:', error);
+                    showNotification('Failed to create backup');
+                } finally {
                     setIsLoading(false);
-                    showNotification(`Backup created for ${selectedListings.length} listing(s)!`);
-                }, 2000);
+                }
             };
 
             const handleShowBackupsList = () => {
@@ -679,9 +726,26 @@
                 setShowRestoreConfirmModal(true);
             };
 
-            const handleViewBackup = (backup) => {
-                setPreviewBackup(backup);
-                setShowBackupPreviewModal(true);
+            const handleViewBackup = async (backup) => {
+                setIsLoading(true);
+                try {
+                    const response = await fetch(`${API_BASE_URL}/backups/${backup.id}`, {
+                        credentials: 'include'
+                    });
+
+                    if (response.ok) {
+                        const backupData = await response.json();
+                        setPreviewBackup(backupData);
+                        setShowBackupPreviewModal(true);
+                    } else {
+                        showNotification('Failed to load backup details');
+                    }
+                } catch (error) {
+                    console.error('Error loading backup:', error);
+                    showNotification('Failed to load backup details');
+                } finally {
+                    setIsLoading(false);
+                }
             };
 
             const confirmRestore = () => {
@@ -696,17 +760,7 @@
             };
 
             const handleDownloadJSON = (backup) => {
-                // Get selected listings data
-                const selectedListingsData = listings.filter(l => selectedListings.includes(l.id));
-
-                const backupData = {
-                    backupId: backup.id,
-                    date: backup.date,
-                    time: backup.time,
-                    listings: selectedListingsData
-                };
-
-                const dataStr = JSON.stringify(backupData, null, 2);
+                const dataStr = JSON.stringify(backup, null, 2);
                 const dataBlob = new Blob([dataStr], { type: 'application/json' });
                 const url = URL.createObjectURL(dataBlob);
                 const link = document.createElement('a');
@@ -810,10 +864,10 @@
                             }}
                         />
                     )}
-                    {showBackupPreviewModal && (
+                    {showBackupPreviewModal && previewBackup && (
                         <BackupPreviewModal
                             backup={previewBackup}
-                            listings={listings.filter(l => selectedListings.includes(l.id))}
+                            listings={previewBackup.listings || []}
                             onDownloadJSON={() => handleDownloadJSON(previewBackup)}
                             onCancel={() => setShowBackupPreviewModal(false)}
                         />

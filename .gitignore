@@ -215,4 +215,7 @@ yarn-debug.log*
 yarn-error.log*
 package-lock.json
 
+# Backups directory (contains user data)
+backups/
+
 claude.md
