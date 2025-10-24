@@ -523,64 +523,9 @@
     <script type="text/babel">
         const { useState, useEffect } = React;
 
-        // Mock Data
-        const MOCK_LISTINGS = [
-            {
-                id: 1,
-                title: "Handmade Ceramic Coffee Mug",
-                price: 28.00,
-                description: "Beautiful handcrafted ceramic mug with a stunning blue glaze finish. Perfect for your morning coffee or tea. Each piece is unique and made with care.",
-                tags: ["ceramic", "handmade", "coffee mug", "pottery", "blue"],
-                photos: [
-                    "https://via.placeholder.com/600x400/4A90E2/FFFFFF?text=Blue+Ceramic+Mug",
-                    "https://via.placeholder.com/600x400/5BA3F5/FFFFFF?text=Mug+Side+View",
-                    "https://via.placeholder.com/600x400/6CB4FF/FFFFFF?text=Mug+Detail"
-                ],
-                variations: [
-                    { size: "Small (8 oz)", price: 24.00, quantity: 5 },
-                    { size: "Medium (12 oz)", price: 28.00, quantity: 8 },
-                    { size: "Large (16 oz)", price: 32.00, quantity: 4 }
-                ],
-                lastBackup: "2025-02-05"
-            },
-            {
-                id: 2,
-                title: "Knitted Wool Scarf",
-                price: 45.00,
-                description: "Cozy hand-knitted wool scarf perfect for cold winter days. Made from 100% merino wool in a classic cable knit pattern.",
-                tags: ["knitted", "wool", "scarf", "winter", "handmade"],
-                photos: [
-                    "https://via.placeholder.com/600x400/E8927C/FFFFFF?text=Wool+Scarf",
-                    "https://via.placeholder.com/600x400/F5A491/FFFFFF?text=Scarf+Pattern",
-                    "https://via.placeholder.com/600x400/FFB6A3/FFFFFF?text=Scarf+Detail"
-                ],
-                variations: [
-                    { color: "Gray", price: 45.00, quantity: 3 },
-                    { color: "Navy Blue", price: 45.00, quantity: 5 },
-                    { color: "Burgundy", price: 48.00, quantity: 2 }
-                ],
-                lastBackup: "2025-02-03"
-            },
-            {
-                id: 3,
-                title: "Wooden Cutting Board",
-                price: 65.00,
-                description: "Premium cutting board made from sustainably sourced walnut and maple wood. Food-safe finish, perfect for any kitchen.",
-                tags: ["woodwork", "cutting board", "kitchen", "walnut", "handmade"],
-                photos: [
-                    "https://via.placeholder.com/600x400/8B6F47/FFFFFF?text=Cutting+Board",
-                    "https://via.placeholder.com/600x400/A68A5C/FFFFFF?text=Wood+Grain",
-                    "https://via.placeholder.com/600x400/C1A572/FFFFFF?text=Board+Detail"
-                ],
-                variations: [
-                    { size: "Small (10x14 inches)", price: 55.00, quantity: 3 },
-                    { size: "Medium (12x18 inches)", price: 65.00, quantity: 4 },
-                    { size: "Large (14x20 inches)", price: 85.00, quantity: 2 }
-                ],
-                lastBackup: "2025-02-05"
-            }
-        ];
+        const API_BASE_URL = 'http://localhost:3000/api';
 
+        // Mock backups data (will be replaced with database in future)
         const MOCK_BACKUPS = [
             {
                 id: 1,
@@ -610,7 +555,9 @@
         ];
 
         function App() {
-            const [listings, setListings] = useState(MOCK_LISTINGS);
+            const [isAuthenticated, setIsAuthenticated] = useState(false);
+            const [authCheckComplete, setAuthCheckComplete] = useState(false);
+            const [listings, setListings] = useState([]);
             const [backups, setBackups] = useState(MOCK_BACKUPS);
             const [selectedListings, setSelectedListings] = useState([]);
             const [selectedBackup, setSelectedBackup] = useState(null);
@@ -621,6 +568,70 @@
             const [previewBackup, setPreviewBackup] = useState(null);
             const [notification, setNotification] = useState(null);
             const [isLoading, setIsLoading] = useState(false);
+
+            // Check authentication status on mount
+            useEffect(() => {
+                checkAuthStatus();
+            }, []);
+
+            // Fetch listings when authenticated
+            useEffect(() => {
+                if (isAuthenticated) {
+                    fetchListings();
+                }
+            }, [isAuthenticated]);
+
+            const checkAuthStatus = async () => {
+                try {
+                    const response = await fetch(`${API_BASE_URL}/auth/status`, {
+                        credentials: 'include'
+                    });
+                    const data = await response.json();
+                    setIsAuthenticated(data.authenticated);
+                } catch (error) {
+                    console.error('Error checking auth status:', error);
+                    setIsAuthenticated(false);
+                } finally {
+                    setAuthCheckComplete(true);
+                }
+            };
+
+            const handleConnectEtsy = async () => {
+                try {
+                    const response = await fetch(`${API_BASE_URL}/auth/etsy`, {
+                        credentials: 'include'
+                    });
+                    const data = await response.json();
+                    window.location.href = data.authUrl;
+                } catch (error) {
+                    console.error('Error starting OAuth:', error);
+                    showNotification('Failed to connect to Etsy');
+                }
+            };
+
+            const fetchListings = async () => {
+                setIsLoading(true);
+                try {
+                    const response = await fetch(`${API_BASE_URL}/listings`, {
+                        credentials: 'include'
+                    });
+
+                    if (response.status === 401) {
+                        setIsAuthenticated(false);
+                        showNotification('Session expired. Please reconnect to Etsy.');
+                        return;
+                    }
+
+                    const data = await response.json();
+                    setListings(data.results || []);
+                    showNotification(`Loaded ${data.count} listings from Etsy!`);
+                } catch (error) {
+                    console.error('Error fetching listings:', error);
+                    showNotification('Failed to load listings from Etsy');
+                } finally {
+                    setIsLoading(false);
+                }
+            };
 
             const handleCreateBackup = () => {
                 if (selectedListings.length === 0) {
@@ -714,18 +725,62 @@
                 setTimeout(() => setNotification(null), 3000);
             };
 
+            // Show loading while checking auth
+            if (!authCheckComplete) {
+                return (
+                    <>
+                        <Header isAuthenticated={false} />
+                        <div className="container">
+                            <div style={{ textAlign: 'center', padding: '60px 20px' }}>
+                                <div className="spinner" style={{ margin: '0 auto' }}></div>
+                                <p style={{ marginTop: '20px', color: 'var(--text-gray)' }}>Loading...</p>
+                            </div>
+                        </div>
+                    </>
+                );
+            }
+
+            // Show connect screen if not authenticated
+            if (!isAuthenticated) {
+                return (
+                    <>
+                        <Header isAuthenticated={false} />
+                        <div className="container">
+                            <div className="connect-screen">
+                                <h1>Connect Your Etsy Shop</h1>
+                                <p>
+                                    Backup and version control your Etsy listings with ease.
+                                    Connect your Etsy shop to get started.
+                                </p>
+                                <button className="btn btn-primary btn-large" onClick={handleConnectEtsy}>
+                                    Connect to Etsy
+                                </button>
+                            </div>
+                        </div>
+                        {notification && <Notification message={notification} />}
+                    </>
+                );
+            }
+
             return (
                 <>
-                    <Header />
+                    <Header isAuthenticated={isAuthenticated} onRefresh={fetchListings} />
                     <div className="container">
-                        <Dashboard
-                            listings={listings}
-                            selectedListings={selectedListings}
-                            setSelectedListings={setSelectedListings}
-                            onCreateBackup={handleCreateBackup}
-                            onRestore={handleShowBackupsList}
-                            isLoading={isLoading}
-                        />
+                        {isLoading && listings.length === 0 ? (
+                            <div style={{ textAlign: 'center', padding: '60px 20px' }}>
+                                <div className="spinner" style={{ margin: '0 auto' }}></div>
+                                <p style={{ marginTop: '20px', color: 'var(--text-gray)' }}>Loading your Etsy listings...</p>
+                            </div>
+                        ) : (
+                            <Dashboard
+                                listings={listings}
+                                selectedListings={selectedListings}
+                                setSelectedListings={setSelectedListings}
+                                onCreateBackup={handleCreateBackup}
+                                onRestore={handleShowBackupsList}
+                                isLoading={isLoading}
+                            />
+                        )}
                     </div>
                     {notification && <Notification message={notification} />}
                     {showBackupModal && (
@@ -767,15 +822,33 @@
             );
         }
 
-        function Header() {
+        function Header({ isAuthenticated, onRefresh }) {
             return (
                 <div className="header">
                     <div className="header-content">
                         <div className="logo">Seller Tools</div>
-                        <div className="status-badge">
-                            <span className="status-dot"></span>
-                            Connected
-                        </div>
+                        {isAuthenticated ? (
+                            <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                                {onRefresh && (
+                                    <button
+                                        className="btn btn-secondary"
+                                        style={{ padding: '8px 16px', fontSize: '14px' }}
+                                        onClick={onRefresh}
+                                    >
+                                        🔄 Refresh Listings
+                                    </button>
+                                )}
+                                <div className="status-badge">
+                                    <span className="status-dot"></span>
+                                    Connected to Etsy
+                                </div>
+                            </div>
+                        ) : (
+                            <div className="status-badge" style={{ backgroundColor: '#fef3cd', color: '#856404' }}>
+                                <span className="status-dot" style={{ backgroundColor: '#856404' }}></span>
+                                Not Connected
+                            </div>
+                        )}
                     </div>
                 </div>
             );
