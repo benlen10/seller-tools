@@ -62,7 +62,8 @@ app.get('/api/auth/etsy', (req, res) => {
         authUrl.searchParams.append('response_type', 'code');
         authUrl.searchParams.append('client_id', ETSY_API_KEY);
         authUrl.searchParams.append('redirect_uri', REDIRECT_URI);
-        authUrl.searchParams.append('scope', 'listings_r');
+        // Request all read scopes for maximum access
+        authUrl.searchParams.append('scope', 'listings_r listings_w shops_r shops_w transactions_r transactions_w address_r address_w email_r profile_r profile_w');
         authUrl.searchParams.append('state', state);
         authUrl.searchParams.append('code_challenge', codeChallenge);
         authUrl.searchParams.append('code_challenge_method', 'S256');
@@ -187,23 +188,54 @@ app.get('/api/listings', requireAuth, async (req, res) => {
             }
         });
 
-        const userId = userResponse.data.user_id;
+        console.log('User response:', JSON.stringify(userResponse.data, null, 2));
 
-        const shopsResponse = await axios.get(`${ETSY_BASE_URL}/application/users/${userId}/shops`, {
-            headers: {
-                'Authorization': `Bearer ${req.session.accessToken}`,
-                'x-api-key': ETSY_API_KEY
+        // Get shop_id from user response (it's included directly)
+        let shopId = userResponse.data.shop_id;
+
+        // If shop_id not in user response, fetch from shops endpoint
+        if (!shopId) {
+            const userId = userResponse.data.user_id;
+            const shopsResponse = await axios.get(`${ETSY_BASE_URL}/application/users/${userId}/shops`, {
+                headers: {
+                    'Authorization': `Bearer ${req.session.accessToken}`,
+                    'x-api-key': ETSY_API_KEY
+                }
+            });
+
+            console.log('Shops response:', JSON.stringify(shopsResponse.data, null, 2));
+
+            // Handle single shop object or array of shops
+            if (Array.isArray(shopsResponse.data)) {
+                shopId = shopsResponse.data[0]?.shop_id;
+            } else if (shopsResponse.data.results && Array.isArray(shopsResponse.data.results)) {
+                shopId = shopsResponse.data.results[0]?.shop_id;
+            } else {
+                shopId = shopsResponse.data.shop_id;
             }
-        });
+        }
 
-        const shopId = shopsResponse.data.results[0].shop_id;
+        if (!shopId) {
+            return res.status(404).json({
+                error: 'No shop found',
+                message: 'Your Etsy account does not have a shop associated with it.'
+            });
+        }
+
+        console.log('Using shop ID:', shopId);
 
         // Get active listings with images and inventory
+        // Fixed: state=active is a QUERY PARAMETER, not part of the path!
+        console.log('Making request to:', `${ETSY_BASE_URL}/application/shops/${shopId}/listings`);
+        console.log('With params:', { state: 'active', includes: 'Images,Inventory', limit: 100 });
+
         const listingsResponse = await axios.get(
-            `${ETSY_BASE_URL}/application/shops/${shopId}/listings/active`,
+            `${ETSY_BASE_URL}/application/shops/${shopId}/listings`,
             {
                 params: {
-                    includes: 'Images,Inventory'
+                    state: 'active',  // Filter for active listings
+                    includes: 'Images,Inventory',
+                    limit: 100
                 },
                 headers: {
                     'Authorization': `Bearer ${req.session.accessToken}`,
@@ -211,6 +243,21 @@ app.get('/api/listings', requireAuth, async (req, res) => {
                 }
             }
         );
+
+        console.log('Listings response:', JSON.stringify({
+            count: listingsResponse.data.count,
+            results_length: listingsResponse.data.results?.length,
+            first_listing_title: listingsResponse.data.results?.[0]?.title
+        }, null, 2));
+
+        // Check if we got any results
+        if (!listingsResponse.data.results || listingsResponse.data.results.length === 0) {
+            console.log('No listings returned from Etsy API');
+            return res.json({
+                count: 0,
+                results: []
+            });
+        }
 
         // Transform Etsy listings to our app format
         const transformedListings = listingsResponse.data.results.map(listing => {
